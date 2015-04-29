@@ -41,8 +41,10 @@ class Github
           break if page_number >= number_of_pages
         end
       end
+      response = response.flatten
+      response.each {|contributor| contributor["repo"] = "#{options[:repo_name]}"}
       file = File.open(options[:output_filename],"w")
-      file.write response.flatten.to_json
+      file.write response.to_json
       file.close
     end
 
