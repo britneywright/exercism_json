@@ -1,7 +1,7 @@
 require 'github'
 
 RSpec.describe Github::Repo do
-  let :repos_hash do
+  let :repo_hash do
     {:id=>22583170,
       :name=>"analysseur",
       :full_name=>"exercism/analysseur",
@@ -88,10 +88,19 @@ RSpec.describe Github::Repo do
       :default_branch=>"master"
     }
   end
-  let(:repo) { Github::Repo.new repo_headers }
+  let(:repo) { Github::Repo.new repo_hash }
 
-  it "knows the information" do
-    expect(repo.headers["content-length"]).to eq "135202"
+  it "creates a repo object with readable attributes" do
+    expect(repo.id).to eq 22583170
+    expect(repo.name).to eq "analysseur"
+    expect(repo.full_name).to eq "exercism/analysseur"
+    expect(repo.html_url).to eq "https://github.com/exercism/analysseur"
+    expect(repo.description).to eq "Light wrapper around JacobNinja's codeminer for exercism project"
+    expect(repo.url).to eq "https://api.github.com/repos/exercism/analysseur"
+    expect(repo.contributors_url).to eq "https://api.github.com/repos/exercism/analysseur/contributors"
+    expect(repo.created_at).to eq "2014-08-03T20:40:40Z"
+    expect(repo.updated_at).to eq "2015-04-25T13:00:00Z"
+    expect(repo.size).to eq 192
   end
 end
 
