@@ -31,7 +31,11 @@ class Github
     
     def self.call_contributors(options)
       file = File.open(options[:output_filename],"w")
-      file.write contributors(options).to_json
+      if options[:repo_name].split(",").length > 1 
+        file.write repos_contributors(options).to_json 
+      else
+        file.write contributors(options).to_json
+      end
       file.close
     end
 
@@ -49,6 +53,17 @@ class Github
       response.each {|contributor| contributor["repo"] = "#{options[:repo_name]}"}
     end
     
+    def self.repos_contributors(options,list=[])
+      repo_list = options[:repo_name]
+      repo_list.split(",").each do |repo|
+        options[:repo_name] = repo
+        response = contributors(options)
+        response = response.flatten
+        list << response
+      end
+      list.flatten
+    end
+
     def self.contributors_url_for(options)
       "https://api.github.com/repos/#{options[:user_name]}/#{options[:repo_name]}/contributors?per_page=100"
     end
