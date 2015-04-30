@@ -15,27 +15,31 @@ class Github
       if argv[2] == nil
         call(options)
       else
-        all_contributors(options)
+        call_contributors(options)
       end
       stdout.puts "Successfully wrote the data to #{options[:output_filename]}!"
     end
 
     def self.call(options)
-      response = HTTParty.get(url_for(options), { :headers => {"User-Agent" => "HTTPARTY"}})
+      response = HTTParty.get(repo_url_for(options), { :headers => {"User-Agent" => "HTTPARTY"}})
       file = File.open(options[:output_filename],"w")
       file.write response.to_json
       file.close
       response
       0
     end
+    
+    def self.call_contributors(options)
+      file = File.open(options[:output_filename],"w")
+      file.write contributors(options).to_json
+      file.close
+    end
 
-    def self.all_contributors(options)
-      response = []
+    def self.contributors(options,response=[],page_number=1)
       first_page = HTTParty.get(contributors_url_for(options), { :headers => {"User-Agent" => "HTTPARTY"}})
       response << first_page
       if first_page.headers["link"] != nil
         number_of_pages = first_page.headers["link"].split(",")[1].match(/&page=(\d+)/)[1].to_i
-        page_number = 1
         loop do
           response << HTTParty.get(contributors_url_for(options), { :query => {page: page_number += 1}, :headers => {"User-Agent" => "HTTPARTY"}})
           break if page_number >= number_of_pages
@@ -43,17 +47,14 @@ class Github
       end
       response = response.flatten
       response.each {|contributor| contributor["repo"] = "#{options[:repo_name]}"}
-      file = File.open(options[:output_filename],"w")
-      file.write response.to_json
-      file.close
     end
-
-    def self.url_for(options)
-      "https://api.github.com/users/#{options[:user_name]}/repos?per_page=100"
-    end
-
+    
     def self.contributors_url_for(options)
       "https://api.github.com/repos/#{options[:user_name]}/#{options[:repo_name]}/contributors?per_page=100"
+    end
+
+    def self.repo_url_for(options)
+      "https://api.github.com/users/#{options[:user_name]}/repos?per_page=100"
     end
   end
 
