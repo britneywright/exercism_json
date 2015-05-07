@@ -6,12 +6,14 @@ class Github
     def self.parse(argv)
       { user_name:        argv[0],
         output_filename:  argv[1],
-        repo_name:        argv[2]
+        repo_names:       argv[2].to_s.split(",")
       }
     end
 
     def self.run(argv,stdout)
       options = parse(argv)
+      require 'pry'
+      binding.pry
       if argv[2] == nil
         call(options)
       else
@@ -31,41 +33,36 @@ class Github
     
     def self.call_contributors(options)
       file = File.open(options[:output_filename],"w")
-      if options[:repo_name].split(",").length > 1 
-        file.write repos_contributors(options).to_json 
-      else
-        file.write contributors(options).to_json
-      end
+      file.write repos_contributors(options).to_json 
       file.close
     end
 
-    def self.contributors(options,response=[],page_number=1)
-      first_page = HTTParty.get(contributors_url_for(options), { :headers => {"User-Agent" => "HTTPARTY"}})
+    def self.contributors(options,repo_name,response=[],page_number=1)
+      first_page = HTTParty.get(contributors_url_for(options,repo_name), { :headers => {"User-Agent" => "HTTPARTY"}})
+      binding.pry
       response << first_page
       if first_page.headers["link"] != nil
         number_of_pages = first_page.headers["link"].split(",")[1].match(/&page=(\d+)/)[1].to_i
         loop do
-          response << HTTParty.get(contributors_url_for(options), { :query => {page: page_number += 1}, :headers => {"User-Agent" => "HTTPARTY"}})
+          response << HTTParty.get(contributors_url_for(options,repo_name), { :query => {page: page_number += 1}, :headers => {"User-Agent" => "HTTPARTY"}})
           break if page_number >= number_of_pages
         end
       end
       response = response.flatten
-      response.each {|contributor| contributor["repo"] = "#{options[:repo_name]}"}
+      response.each {|contributor| contributor["repo"] = "#{repo_name}"}
     end
     
     def self.repos_contributors(options,list=[])
-      repo_list = options[:repo_name]
-      repo_list.split(",").each do |repo|
-        options[:repo_name] = repo
-        response = contributors(options)
+      options[:repo_names].each do |repo_name|
+        response = contributors(options,repo_name)
         response = response.flatten
         list << response
       end
       list.flatten
     end
 
-    def self.contributors_url_for(options)
-      "https://api.github.com/repos/#{options[:user_name]}/#{options[:repo_name]}/contributors?per_page=100"
+    def self.contributors_url_for(options,repo_name)
+      "https://api.github.com/repos/#{options[:user_name]}/#{repo_name}/contributors?per_page=100"
     end
 
     def self.repo_url_for(options)
