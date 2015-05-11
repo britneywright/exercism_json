@@ -12,8 +12,6 @@ class Github
 
     def self.run(argv,stdout)
       options = parse(argv)
-      require 'pry'
-      binding.pry
       if argv[2] == nil
         call(options)
       else
@@ -39,10 +37,9 @@ class Github
 
     def self.contributors(options,repo_name,response=[],page_number=1)
       first_page = HTTParty.get(contributors_url_for(options,repo_name), { :headers => {"User-Agent" => "HTTPARTY"}})
-      binding.pry
       response << first_page
       if first_page.headers["link"] != nil
-        number_of_pages = first_page.headers["link"].split(",")[1].match(/&page=(\d+)/)[1].to_i
+        number_of_pages = num_pages(first_page.headers["link"])
         loop do
           response << HTTParty.get(contributors_url_for(options,repo_name), { :query => {page: page_number += 1}, :headers => {"User-Agent" => "HTTPARTY"}})
           break if page_number >= number_of_pages
@@ -67,6 +64,10 @@ class Github
 
     def self.repo_url_for(options)
       "https://api.github.com/users/#{options[:user_name]}/repos?per_page=100"
+    end
+
+    def self.num_pages(headers_link)
+      headers_link.split(",")[1].match(/&page=(\d+)/)[1].to_i
     end
   end
 
